@@ -1,3 +1,4 @@
+import { CreateUserDto } from './../../dto/create-user.dto';
 import { userStub } from './../stubs/users.stub';
 import { DatabaseService } from './../../../database/database.service';
 import { AppModule } from './../../../app.module';
@@ -24,8 +25,11 @@ describe('UsersController', () => {
     });
 
     afterAll(async () => {
-        await dbConnection.collection('users').deleteMany({});
         await app.close();
+    });
+
+    beforeEach(async () => {
+        await dbConnection.collection('users').deleteMany({});
     });
 
     describe('getUsers', () => {
@@ -37,4 +41,25 @@ describe('UsersController', () => {
             expect(response.body).toMatchObject([userStub()]);
         });
     });
+
+    describe('createUser', () => {
+        it('Should createa a user', async () => {
+            const createUserRequest: CreateUserDto = {
+                email: userStub().email,
+                age: userStub().age
+            }
+            const response = await request(httpServer)
+                .post('/users')
+                .send(createUserRequest);
+
+            expect(response.status).toBe(201);
+            expect(response.body).toMatchObject(createUserRequest);
+
+            const user = await dbConnection.collection('users').findOne({
+                email: createUserRequest.email
+            });
+
+            expect(user).toMatchObject(createUserRequest);
+        });
+    })
 });
